@@ -1,0 +1,810 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Configurador de Patrones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap">
+
+<style>
+/* ── Tokens ── */
+:root {
+  --bg:       #f4f3f0;
+  --surface:  #ffffff;
+  --surface2: #f0efec;
+  --border:   #e2e1dc;
+  --ink:      #1a1916;
+  --ink2:     #6b6a65;
+  --accent:   #2457c5;
+  --accent-s: #1a3fa0;
+  --accent-bg:#edf1fb;
+  --cut:      #d63a2c;
+  --mark:     #2457c5;
+  --piece:    #f7f4ee;
+  --r:        8px;
+  --r2:       12px;
+  --shadow:   0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:       #141412;
+    --surface:  #1e1d1b;
+    --surface2: #252420;
+    --border:   #333230;
+    --ink:      #f0ede6;
+    --ink2:     #918f89;
+    --accent:   #5b82e0;
+    --accent-s: #7a9bec;
+    --accent-bg:#1c2540;
+    --cut:      #e05548;
+    --mark:     #5b82e0;
+    --piece:    #1a1916;
+    --shadow:   0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:       #141412;
+  --surface:  #1e1d1b;
+  --surface2: #252420;
+  --border:   #333230;
+  --ink:      #f0ede6;
+  --ink2:     #918f89;
+  --accent:   #5b82e0;
+  --accent-s: #7a9bec;
+  --accent-bg:#1c2540;
+  --cut:      #e05548;
+  --mark:     #5b82e0;
+  --piece:    #1a1916;
+  --shadow:   0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
+  color-scheme: dark;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding-left:  max(0px, env(safe-area-inset-left,  0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3, .label { font-family: 'Space Grotesk', sans-serif; }
+h1 { font-size: 1.25rem; font-weight: 700; }
+h2 { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); margin-bottom: .75rem; }
+h3 { font-size: 1rem; font-weight: 600; }
+a { color: var(--accent); }
+
+/* ── Layout ── */
+.app-header {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem max(16px, env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: .75rem;
+}
+.app-header .chip {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--accent-bg); color: var(--accent);
+  border-radius: 100px; padding: .2rem .65rem;
+}
+.legend { display: flex; gap: 1rem; margin-left: auto; align-items: center; font-size: .78rem; color: var(--ink2); }
+.legend span { display: flex; align-items: center; gap: .3rem; }
+.legend span::before { content: ''; display: inline-block; width: 18px; height: 2px; }
+.legend .lc::before { background: var(--cut); }
+.legend .lm::before { border-top: 2px dashed var(--mark); }
+
+.main { display: grid; grid-template-columns: 380px 1fr; min-height: calc(100vh - 50px); }
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .stage { order: -1; }
+}
+
+/* ── Controls ── */
+.controls {
+  padding: 1.5rem max(16px, env(safe-area-inset-left, 0px));
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+/* Selector de prenda */
+.prenda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.prenda-btn {
+  display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  padding: .9rem .5rem;
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface2);
+  cursor: pointer; transition: all .15s;
+  font-family: 'Space Grotesk', sans-serif; font-size: .82rem; font-weight: 500;
+  color: var(--ink);
+}
+.prenda-btn .ico { font-size: 1.6rem; }
+.prenda-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+.prenda-btn.active { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); }
+
+/* Subselector estilo camisa */
+#sec-estilo { display: none; }
+.radio-group { display: flex; flex-direction: column; gap: .4rem; }
+.radio-opt {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .5rem .75rem;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: all .15s;
+  font-size: .88rem;
+}
+.radio-opt:hover { border-color: var(--accent); background: var(--accent-bg); }
+.radio-opt input { accent-color: var(--accent); }
+.radio-opt.selected { border-color: var(--accent); background: var(--accent-bg); }
+
+/* Medidas */
+.medidas-grid { display: flex; flex-direction: column; gap: .85rem; }
+.field { display: flex; flex-direction: column; gap: .3rem; }
+.field label {
+  font-size: .78rem; font-weight: 500; color: var(--ink2);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.field label .val {
+  font-family: 'Space Grotesk', sans-serif; font-size: .9rem;
+  font-weight: 600; color: var(--accent);
+  min-width: 3.5rem; text-align: right;
+}
+.field input[type=range] {
+  width: 100%; accent-color: var(--accent); cursor: pointer;
+  height: 4px;
+}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+
+/* Ajustes finos */
+details summary {
+  font-family: 'Space Grotesk', sans-serif; font-size: .82rem; font-weight: 600;
+  color: var(--ink2); cursor: pointer; padding: .5rem 0;
+  list-style: none; display: flex; align-items: center; gap: .4rem;
+}
+details summary::before { content: '▸'; transition: transform .2s; }
+details[open] summary::before { transform: rotate(90deg); }
+details .inner { display: flex; flex-direction: column; gap: .85rem; margin-top: .75rem; }
+
+/* Toggle */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .88rem;
+}
+.toggle {
+  position: relative; width: 36px; height: 20px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .track {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: 100px;
+  transition: .2s; cursor: pointer;
+}
+.toggle input:checked + .track { background: var(--accent); }
+.toggle .track::after {
+  content: ''; position: absolute;
+  top: 2px; left: 2px; width: 16px; height: 16px;
+  background: white; border-radius: 50%; transition: .2s;
+}
+.toggle input:checked + .track::after { transform: translateX(16px); }
+
+/* Select */
+.field select {
+  width: 100%; padding: .4rem .6rem;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  background: var(--surface); color: var(--ink);
+  font-size: .88rem; font-family: inherit; cursor: pointer;
+}
+.field select:focus { outline: none; border-color: var(--accent); }
+
+/* Resumen */
+.resumen-list { font-size: .88rem; color: var(--ink2); margin-bottom: 1rem; }
+.resumen-list div { display: flex; justify-content: space-between; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+.resumen-list div:last-child { border-bottom: none; }
+.resumen-list strong { color: var(--ink); font-weight: 500; }
+.btn-primary {
+  width: 100%; padding: .75rem;
+  background: var(--accent); color: white;
+  border: none; border-radius: var(--r); cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; font-size: .9rem; font-weight: 600;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--accent-s); }
+#result-panel { display: none; margin-top: 1rem; }
+#result-panel.show { display: block; }
+.result-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 1rem; font-size: .82rem;
+}
+.result-box p { margin-bottom: .4rem; }
+.file-list { display: flex; flex-direction: column; gap: .3rem; margin: .6rem 0; }
+.file-tag {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: .2rem .6rem;
+  font-family: 'Space Grotesk', sans-serif; font-size: .78rem; color: var(--ink2);
+}
+.copy-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: .35rem .75rem; cursor: pointer; font-size: .78rem; color: var(--ink2);
+  transition: all .15s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Stage ── */
+.stage {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 50px);
+  height: calc(100vh - env(safe-area-inset-top, 0px) - 50px);
+  display: flex; flex-direction: column;
+}
+@media (max-width: 860px) {
+  .stage { position: relative; height: 320px; top: 0; }
+}
+.stage-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.tab-btn {
+  padding: .65rem 1.25rem;
+  border: none; background: none; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; font-size: .82rem; font-weight: 500;
+  color: var(--ink2); border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.stage-body { flex: 1; overflow: hidden; background: var(--bg); }
+.stage-view { width: 100%; height: 100%; display: none; }
+.stage-view.active { display: flex; align-items: center; justify-content: center; }
+#svg-stage { width: 100%; height: 100%; }
+
+.stats-bar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: .5rem max(16px, env(safe-area-inset-left, 0px));
+  display: flex; gap: 1.5rem; font-size: .78rem; color: var(--ink2);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.stats-bar span { display: flex; align-items: center; gap: .3rem; }
+.stats-bar b { color: var(--ink); font-weight: 600; }
+
+/* Vista 3D placeholder */
+.view3d-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: .75rem;
+  color: var(--ink2); font-family: 'Space Grotesk', sans-serif; font-size: .9rem;
+  text-align: center; padding: 2rem;
+}
+.view3d-placeholder .ico3d { font-size: 3rem; opacity: .4; }
+</style>
+
+<!-- HEADER -->
+<header class="app-header">
+  <span class="chip">Maqueta</span>
+  <h1>Configurador de Patrones</h1>
+  <div class="legend">
+    <span class="lc">Corte</span>
+    <span class="lm">Marcas</span>
+  </div>
+</header>
+
+<div class="main">
+  <!-- CONTROLES -->
+  <aside class="controls">
+
+    <!-- 1. Prenda -->
+    <div class="card">
+      <h2>1 · Prenda</h2>
+      <div class="prenda-grid">
+        <button class="prenda-btn active" data-prenda="interior" onclick="setPrenda(this)">
+          <span class="ico">👕</span>Camisa Interior
+        </button>
+        <button class="prenda-btn" data-prenda="exterior" onclick="setPrenda(this)">
+          <span class="ico">👔</span>Camisa Exterior
+        </button>
+        <button class="prenda-btn" data-prenda="chamarra" onclick="setPrenda(this)">
+          <span class="ico">🧥</span>Chamarra
+        </button>
+        <button class="prenda-btn" data-prenda="pantalon" onclick="setPrenda(this)">
+          <span class="ico">👖</span>Pantalón
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Estilo (sólo camisas) -->
+    <div class="card" id="sec-estilo">
+      <h2>2 · Estilo</h2>
+      <div class="radio-group" id="radio-manga">
+        <label class="radio-opt selected" onclick="setManga(this,'larga')">
+          <input type="radio" name="manga" value="larga" checked> Manga larga
+        </label>
+        <label class="radio-opt" onclick="setManga(this,'corta')">
+          <input type="radio" name="manga" value="corta"> Manga corta
+        </label>
+        <label class="radio-opt" onclick="setManga(this,'sin')">
+          <input type="radio" name="manga" value="sin"> Sin manga
+        </label>
+      </div>
+    </div>
+
+    <!-- 3. Medidas torso -->
+    <div class="card" id="sec-torso">
+      <h2>3 · Medidas (cm)</h2>
+      <div class="medidas-grid">
+        <div class="field">
+          <label>Contorno de pecho <span class="val" id="v-pecho">94</span> cm</label>
+          <input type="range" id="s-pecho" min="70" max="140" value="94" oninput="set('pecho',this.value)">
+        </div>
+        <div class="field">
+          <label>Contorno de cintura <span class="val" id="v-cintura">80</span> cm</label>
+          <input type="range" id="s-cintura" min="60" max="130" value="80" oninput="set('cintura',this.value)">
+        </div>
+        <div class="field">
+          <label>Contorno de cadera <span class="val" id="v-cadera">95</span> cm</label>
+          <input type="range" id="s-cadera" min="70" max="140" value="95" oninput="set('cadera',this.value)">
+        </div>
+        <div class="field">
+          <label>Contorno de cuello <span class="val" id="v-cuello">38</span> cm</label>
+          <input type="range" id="s-cuello" min="30" max="55" value="38" oninput="set('cuello',this.value)">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Largo espalda <span class="val" id="v-largoE">73</span></label>
+            <input type="range" id="s-largoE" min="40" max="90" value="73" oninput="set('largoE',this.value)">
+          </div>
+          <div class="field">
+            <label>Largo busto <span class="val" id="v-largoB">66</span></label>
+            <input type="range" id="s-largoB" min="35" max="85" value="66" oninput="set('largoB',this.value)">
+          </div>
+        </div>
+        <div class="field" id="f-manga">
+          <label>Largo de manga <span class="val" id="v-manga">60</span> cm</label>
+          <input type="range" id="s-manga" min="15" max="75" value="60" oninput="set('manga',this.value)">
+        </div>
+        <div class="field" id="f-brazo">
+          <label>Contorno de brazo <span class="val" id="v-brazo">30</span> cm</label>
+          <input type="range" id="s-brazo" min="22" max="50" value="30" oninput="set('brazo',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Medidas pantalón (ocultas por defecto) -->
+    <div class="card" id="sec-pants" style="display:none">
+      <h2>3 · Medidas pantalón (cm)</h2>
+      <div class="medidas-grid">
+        <div class="field">
+          <label>Contorno de cintura <span class="val" id="v-pcint">80</span> cm</label>
+          <input type="range" id="s-pcint" min="60" max="130" value="80" oninput="set('pcint',this.value)">
+        </div>
+        <div class="field">
+          <label>Contorno de cadera <span class="val" id="v-pcad">95</span> cm</label>
+          <input type="range" id="s-pcad" min="70" max="140" value="95" oninput="set('pcad',this.value)">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Tiro <span class="val" id="v-tiro">27</span></label>
+            <input type="range" id="s-tiro" min="20" max="40" value="27" oninput="set('tiro',this.value)">
+          </div>
+          <div class="field">
+            <label>Entrepierna <span class="val" id="v-entrep">80</span></label>
+            <input type="range" id="s-entrep" min="60" max="100" value="80" oninput="set('entrep',this.value)">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Muslo <span class="val" id="v-muslo">58</span></label>
+            <input type="range" id="s-muslo" min="40" max="80" value="58" oninput="set('muslo',this.value)">
+          </div>
+          <div class="field">
+            <label>Rodilla <span class="val" id="v-rod">40</span></label>
+            <input type="range" id="s-rod" min="28" max="60" value="40" oninput="set('rod',this.value)">
+          </div>
+        </div>
+        <div class="field">
+          <label>Tobillo <span class="val" id="v-tob">24</span> cm</label>
+          <input type="range" id="s-tob" min="18" max="40" value="24" oninput="set('tob',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Ajustes finos -->
+    <div class="card" id="sec-ajustes">
+      <details>
+        <summary>Ajustes finos</summary>
+        <div class="inner">
+          <div class="field">
+            <label>Holgura adicional <span class="val" id="v-holgura">0</span> cm</label>
+            <input type="range" id="s-holgura" min="0" max="10" step=".5" value="0" oninput="set('holgura',this.value)">
+          </div>
+          <div class="field">
+            <label>Separación de piezas <span class="val" id="v-sep">15</span> mm</label>
+            <input type="range" id="s-sep" min="5" max="30" value="15" oninput="set('sep',this.value)">
+          </div>
+          <div id="f-copas">
+            <div class="toggle-row" style="margin-bottom:.6rem">
+              <span style="font-size:.88rem">¿Con copas?</span>
+              <label class="toggle">
+                <input type="checkbox" id="chk-copas" onchange="set('copas',this.checked)">
+                <span class="track"></span>
+              </label>
+            </div>
+            <div class="field" id="f-copa-tipo" style="display:none">
+              <label>Tipo de copa</label>
+              <select id="sel-copa" onchange="set('copaTipo',this.value)">
+                <option value="A">Copa A</option>
+                <option value="B" selected>Copa B</option>
+                <option value="C">Copa C</option>
+                <option value="D">Copa D</option>
+              </select>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <span style="font-size:.88rem">Patrón simétrico</span>
+            <label class="toggle">
+              <input type="checkbox" id="chk-sim" checked onchange="set('simetrico',this.checked)">
+              <span class="track"></span>
+            </label>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Resumen -->
+    <div class="card">
+      <h2>Resumen del pedido</h2>
+      <div class="resumen-list" id="resumen-list"></div>
+      <button class="btn-primary" onclick="enviarPedido()">Enviar pedido (simulado)</button>
+      <div id="result-panel">
+        <div class="result-box">
+          <p>✅ <strong>Pedido registrado.</strong> Se generarán estos archivos:</p>
+          <div class="file-list" id="file-list"></div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem">
+            <code id="json-preview" style="font-size:.7rem;flex:1;overflow-x:auto;white-space:pre;background:var(--surface2);padding:.5rem;border-radius:6px;border:1px solid var(--border)"></code>
+          </div>
+          <button class="copy-btn" style="margin-top:.5rem;width:100%" onclick="copyJSON()">Copiar JSON de parámetros</button>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- STAGE -->
+  <section class="stage">
+    <div class="stage-tabs">
+      <button class="tab-btn active" onclick="showTab('2d',this)">Patrón 2D</button>
+      <button class="tab-btn" onclick="showTab('3d',this)">Vista 3D</button>
+    </div>
+    <div class="stage-body">
+      <div class="stage-view active" id="view-2d">
+        <svg id="svg-stage" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="stage-view" id="view-3d">
+        <div class="view3d-placeholder">
+          <div class="ico3d">🧵</div>
+          <div>Vista 3D · Próximamente</div>
+          <div style="font-size:.78rem;max-width:220px;text-align:center;opacity:.7">
+            En la versión final se integrará una previsualización three.js generada desde Grasshopper.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar">
+      <span>Piezas: <b id="st-piezas">-</b></span>
+      <span>Long. de corte: <b id="st-corte">-</b></span>
+      <span>Hoja: <b id="st-hoja">-</b></span>
+      <span>Folios A4 (1:1): <b id="st-folios">-</b></span>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ── Estado ── */
+const S = {
+  prenda:'interior', manga:'larga',
+  pecho:94, cintura:80, cadera:95, cuello:38, largoE:73, largoB:66,
+  mangaL:60, brazo:30,
+  pcint:80, pcad:95, tiro:27, entrep:80, muslo:58, rod:40, tob:24,
+  holgura:0, sep:15, copas:false, copaTipo:'B', simetrico:true
+};
+
+/* ── Helpers UI ── */
+function set(k, v){
+  if(k==='manga'){ S.manga=v; }
+  else if(k==='prenda'){ S.prenda=v; }
+  else if(k==='copas'){ S.copas=!!v; document.getElementById('f-copa-tipo').style.display=S.copas?'block':'none'; }
+  else if(k==='copaTipo'){ S.copaTipo=v; }
+  else if(k==='simetrico'){ S.simetrico=!!v; }
+  else {
+    S[k]=parseFloat(v);
+    const el=document.getElementById('v-'+k);
+    if(el) el.textContent=parseFloat(v).toFixed(k==='holgura'?1:0);
+  }
+  refresh();
+}
+
+function setPrenda(btn){
+  document.querySelectorAll('.prenda-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  S.prenda=btn.dataset.prenda;
+  const isShirt=S.prenda!=='pantalon';
+  document.getElementById('sec-estilo').style.display=isShirt?'block':'none';
+  document.getElementById('sec-torso').style.display=isShirt?'block':'none';
+  document.getElementById('sec-pants').style.display=isShirt?'none':'block';
+  document.getElementById('f-copas').style.display=(S.prenda==='interior')?'block':'none';
+  refresh();
+}
+
+function setManga(lbl, v){
+  document.querySelectorAll('.radio-opt').forEach(l=>l.classList.remove('selected'));
+  lbl.classList.add('selected'); lbl.querySelector('input').checked=true;
+  S.manga=v;
+  const hasManga=v!=='sin';
+  document.getElementById('f-manga').style.display=hasManga?'block':'none';
+  document.getElementById('f-brazo').style.display=hasManga?'block':'none';
+  refresh();
+}
+
+function showTab(id, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.stage-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+}
+
+/* ── Generador de piezas (cm) ── */
+function ease(v, h=0){ return v + h + S.holgura; }
+
+function shirtPieces(){
+  const W=ease(S.pecho,4)/2, C=ease(S.cintura,2)/2, H=ease(S.cadera,4)/2;
+  const LE=S.largoE, LB=S.largoB, neck=S.cuello/Math.PI/2;
+  const pieces=[];
+  // Delantera
+  pieces.push({ name:'Delantera', pts:[
+    [0,0],[W,0],[W-C*.05,LB*.45],[W-H*.05,LB],[0,LB]
+  ]});
+  // Espalda
+  pieces.push({ name:'Espalda', pts:[
+    [0,0],[W,0],[W-C*.04,LE*.45],[W-H*.04,LE],[0,LE]
+  ]});
+  // Manga (si aplica)
+  if(S.manga!=='sin'){
+    const ML=S.manga==='corta'?S.mangaL*.35:S.mangaL;
+    const MA=ease(S.brazo,2)/2;
+    pieces.push({ name:'Manga', pts:[
+      [0,0],[MA*1.05,0],[MA,ML],[0,ML]
+    ]});
+    // Puño
+    if(S.manga==='larga'){
+      pieces.push({ name:'Puño', pts:[
+        [0,0],[ease(S.brazo,1)*.9,0],[ease(S.brazo,1)*.9,6],[0,6]
+      ]});
+    }
+  }
+  // Cuello
+  pieces.push({ name:'Cuello', pts:[
+    [0,0],[S.cuello*.52,0],[S.cuello*.52,neck*1.4],[0,neck*1.4]
+  ]});
+  // Copa (si aplica)
+  if(S.copas && S.prenda==='interior'){
+    const sz={'A':8,'B':10,'C':12,'D':14}[S.copaTipo]||10;
+    pieces.push({ name:'Copa', pts:[
+      [0,sz*.6],[sz*.7,0],[sz*1.4,sz*.6],[sz*.7,sz*1.3]
+    ]});
+    if(!S.simetrico) pieces.push({ name:'Copa L', pts:[
+      [0,sz*.6],[sz*.7,0],[sz*1.4,sz*.6],[sz*.7,sz*1.3]
+    ]});
+  }
+  return pieces;
+}
+
+function pantsPieces(){
+  const CI=ease(S.pcint,2)/4, CA=ease(S.pcad,4)/4;
+  const TI=S.tiro, EN=S.entrep, MU=ease(S.muslo,2)/2, RO=ease(S.rod,1)/2, TO=ease(S.tob,1)/2;
+  const largo=TI+EN;
+  const pieces=[];
+  // Delantera pierna
+  pieces.push({ name:'Pierna Del.', pts:[
+    [0,0],[CA,0],[CA*.9,TI],[MU,TI],[RO,largo*.6],[TO,largo],[CI*.8,largo],[CI*.2,largo],[0,largo*.6],[CI*.1,TI]
+  ]});
+  // Trasera pierna
+  pieces.push({ name:'Pierna Tra.', pts:[
+    [0,0],[CA*1.05,0],[CA,TI],[MU*1.05,TI],[RO,largo*.6],[TO,largo],[CI*.8,largo],[0,largo*.6],[CI*.1,TI]
+  ]});
+  // Pretina
+  pieces.push({ name:'Pretina', pts:[
+    [0,0],[ease(S.pcint,4)*.5,0],[ease(S.pcint,4)*.5,4],[0,4]
+  ]});
+  return pieces;
+}
+
+/* ── Layout (filas de piezas) ── */
+function layout(pieces){
+  const gap=S.sep/10; // mm → cm
+  const maxW=180;
+  const rows=[]; let row=[]; let rowW=0;
+  pieces.forEach(p=>{
+    const bb=bbox(p.pts);
+    if(rowW+bb.w+gap>maxW && row.length){
+      rows.push(row); row=[]; rowW=0;
+    }
+    row.push({piece:p, bb, x:rowW, y:0});
+    rowW+=bb.w+gap;
+  });
+  if(row.length) rows.push(row);
+  // Calcular Y por fila
+  let yOff=0;
+  const placed=[];
+  rows.forEach(row=>{
+    const rH=Math.max(...row.map(r=>r.bb.h));
+    row.forEach(r=>{ placed.push({...r, y:yOff}); });
+    yOff+=rH+gap;
+  });
+  return { placed, totalW:maxW, totalH:yOff };
+}
+
+function bbox(pts){
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+  return { x:Math.min(...xs), y:Math.min(...ys), w:Math.max(...xs)-Math.min(...xs), h:Math.max(...ys)-Math.min(...ys) };
+}
+
+/* ── Render SVG ── */
+function render2D(){
+  const pieces=S.prenda==='pantalon'?pantsPieces():shirtPieces();
+  const {placed, totalW, totalH}=layout(pieces);
+  const svg=document.getElementById('svg-stage');
+  const PAD=5; // cm de margen visual
+  const W=totalW+PAD*2, H=totalH+PAD*2;
+
+  // Colores según tema
+  const dark=document.documentElement.dataset.theme==='dark'||
+    (!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);
+  const gridC=dark?'#2a2927':'#e8e6e1';
+  const bgC=dark?'#141412':'#f4f3f0';
+  const inkC=dark?'#918f89':'#6b6a65';
+  const pieceC=dark?'#1e1d1b':'#fdf9f2';
+
+  let d=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-PAD} ${-PAD} ${W} ${H}" style="font-family:'Inter',sans-serif">`;
+  // Fondo
+  d+=`<rect x="${-PAD}" y="${-PAD}" width="${W}" height="${H}" fill="${bgC}"/>`;
+  // Grid 10 cm
+  for(let x=0;x<=Math.ceil(totalW);x+=10)
+    d+=`<line x1="${x}" y1="${-PAD}" x2="${x}" y2="${totalH+PAD}" stroke="${gridC}" stroke-width=".3"/>`;
+  for(let y=0;y<=Math.ceil(totalH);y+=10)
+    d+=`<line x1="${-PAD}" y1="${y}" x2="${totalW+PAD}" y2="${y}" stroke="${gridC}" stroke-width=".3"/>`;
+
+  placed.forEach(({piece, bb, x, y})=>{
+    const tx=x-bb.x, ty=y-bb.y;
+    const pts=piece.pts.map(p=>`${(p[0]+tx).toFixed(2)},${(p[1]+ty).toFixed(2)}`).join(' ');
+    // Relleno
+    d+=`<polygon points="${pts}" fill="${pieceC}" stroke="none"/>`;
+    // Línea de corte
+    d+=`<polygon points="${pts}" fill="none" stroke="#d63a2c" stroke-width=".6"/>`;
+    // Hilo de marca (diagonal punteada)
+    d+=`<line x1="${x+bb.w*.2}" y1="${y+bb.h*.5}" x2="${x+bb.w*.8}" y2="${y+bb.h*.5}" stroke="#2457c5" stroke-width=".35" stroke-dasharray="1.5,1"/>`;
+    // Label
+    const cx=x+bb.w/2, cy=y+bb.h/2;
+    d+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="2.4" fill="${inkC}" font-family="'Space Grotesk',sans-serif" font-weight="600">${piece.name}</text>`;
+    // Dimensiones
+    d+=`<text x="${cx}" y="${cy+3.5}" text-anchor="middle" font-size="1.6" fill="${inkC}">${bb.w.toFixed(1)}×${bb.h.toFixed(1)} cm</text>`;
+  });
+
+  // Escala (10 cm)
+  const sx=-PAD+1, sy=totalH+2;
+  d+=`<line x1="${sx}" y1="${sy}" x2="${sx+10}" y2="${sy}" stroke="${inkC}" stroke-width=".5"/>`;
+  d+=`<text x="${sx+5}" y="${sy+1.8}" text-anchor="middle" font-size="1.6" fill="${inkC}">10 cm</text>`;
+
+  d+='</svg>';
+  svg.outerHTML=d;
+  // Re-asignar la referencia (outerHTML reemplaza el nodo)
+  // lo hacemos por innerHTML del padre
+  const wrap=document.getElementById('view-2d');
+  wrap.innerHTML=d;
+}
+
+/* ── Stats ── */
+function stats(){
+  const pieces=S.prenda==='pantalon'?pantsPieces():shirtPieces();
+  const {placed, totalW, totalH}=layout(pieces);
+  let perimeter=0;
+  placed.forEach(({piece})=>{
+    const pts=piece.pts;
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i], b=pts[(i+1)%pts.length];
+      perimeter+=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    }
+  });
+  document.getElementById('st-piezas').textContent=placed.length;
+  document.getElementById('st-corte').textContent=(perimeter/100).toFixed(2)+' m';
+  document.getElementById('st-hoja').textContent=`${totalW.toFixed(0)}×${totalH.toFixed(0)} cm`;
+  const a4w=21, a4h=29.7;
+  const cols=Math.ceil(totalW/a4w), rows=Math.ceil(totalH/a4h);
+  document.getElementById('st-folios').textContent=cols*rows;
+}
+
+/* ── Resumen ── */
+const LABELS={
+  prenda:{interior:'Camisa interior',exterior:'Camisa exterior',chamarra:'Chamarra',pantalon:'Pantalón'},
+  manga:{larga:'Manga larga',corta:'Manga corta',sin:'Sin manga'}
+};
+function updateResumen(){
+  const isP=S.prenda==='pantalon';
+  const rows=[
+    ['Prenda', LABELS.prenda[S.prenda]||S.prenda],
+    ...(isP?[]:[['Manga', LABELS.manga[S.manga]]]),
+    ...(isP?[
+      ['Cintura', S.pcint+' cm'],['Cadera', S.pcad+' cm'],
+      ['Tiro', S.tiro+' cm'],['Entrepierna', S.entrep+' cm'],
+    ]:[
+      ['Pecho', S.pecho+' cm'],['Cintura', S.cintura+' cm'],
+      ['Cadera', S.cadera+' cm'],['Cuello', S.cuello+' cm'],
+      ['Largo espalda', S.largoE+' cm'],
+    ]),
+    ['Holgura extra', S.holgura+' cm'],
+  ];
+  document.getElementById('resumen-list').innerHTML=
+    rows.map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('');
+}
+
+/* ── Enviar pedido ── */
+let lastJSON='';
+function enviarPedido(){
+  const isP=S.prenda==='pantalon';
+  const slug=S.prenda+(isP?'':`_${S.manga}`)+'_'+Date.now();
+  // Parámetros en nomenclatura GH
+  const ghParams=isP?{
+    'Cintura Pantalon':S.pcint,'Cadera Pantalon':S.pcad,
+    'Tiro':S.tiro,'Entrepierna':S.entrep,
+    'Muslo':S.muslo,'Rodilla':S.rod,'Tobillo':S.tob,
+    'Separacion':S.sep/10,'Holgura':S.holgura,
+  }:{
+    'Pecho':S.pecho,'Cintura':S.cintura,'Cadera':S.cadera,
+    'CuelloC':S.cuello,'LargoEsp':S.largoE,'LargoB':S.largoB,
+    'LargoManga':S.mangaL,'Brazo':S.brazo,
+    'Manga':S.manga,'Separacion':S.sep/10,'Holgura':S.holgura,
+    'Copas':S.copas,'TipoCopa':S.copaTipo,'Simetrico':S.simetrico,
+  };
+  lastJSON=JSON.stringify(ghParams,null,2);
+
+  const files=[slug+'.svg', slug+'.dxf', slug+'_1a1.pdf'];
+  document.getElementById('file-list').innerHTML=
+    files.map(f=>`<div><span class="file-tag">📄 ${f}</span></div>`).join('');
+  document.getElementById('json-preview').textContent=lastJSON;
+  const rp=document.getElementById('result-panel');
+  rp.classList.add('show');
+  rp.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function copyJSON(){
+  navigator.clipboard.writeText(lastJSON).catch(()=>{
+    const el=document.getElementById('json-preview');
+    const r=document.createRange(); r.selectNodeContents(el);
+    getSelection().removeAllRanges(); getSelection().addRange(r);
+  });
+}
+
+/* ── Refresh principal ── */
+function refresh(){
+  updateResumen();
+  render2D();
+  stats();
+}
+
+/* ── Init ── */
+// Estado inicial
+document.getElementById('sec-estilo').style.display='block';
+document.getElementById('f-copa-tipo').style.display='none';
+refresh();
+
+})();
+</script>
+
+</body></html>
